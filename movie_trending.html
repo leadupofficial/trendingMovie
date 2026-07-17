@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=800">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 800px; height: 480px; overflow: hidden;
+    font-family: 'Arial Black', 'Helvetica', sans-serif;
+    background: #000; color: #fff;
+  }
+  .header {
+    padding: 12px 30px;
+    background: #fff; color: #000;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .header h1 { font-size: 28px; letter-spacing: 2px; }
+  .header .sub { font-size: 12px; color: #000; }
+  .header .date { font-size: 13px; color: #000; text-align: right; }
+  .movies { display: flex; gap: 0; height: 370px; }
+  .movie {
+    flex: 1; padding: 16px 20px;
+    border-right: 2px solid #fff;
+    display: flex; flex-direction: column;
+  }
+  .movie:last-child { border-right: none; }
+  .rank {
+    font-size: 58px; font-weight: 900;
+    color: #fff; line-height: 1;
+    margin-bottom: 4px;
+    opacity: 0.3;
+  }
+  .title {
+    font-size: 17px; font-weight: 900;
+    line-height: 1.2; margin-bottom: 6px;
+    text-transform: uppercase;
+    color: #fff;
+  }
+  .meta {
+    font-size: 11px; color: #fff;
+    margin-bottom: 8px; display: flex; gap: 10px;
+  }
+  .stars { letter-spacing: 2px; font-size: 13px; color: #fff; }
+  .overview {
+    font-size: 11px; color: #fff;
+    line-height: 1.4; flex: 1;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    font-weight: normal;
+  }
+  .film-strip {
+    display: flex; justify-content: center;
+    gap: 6px; padding: 4px 0;
+    background: #000;
+  }
+  .film-hole {
+    width: 10px; height: 8px;
+    border: 1px solid #fff;
+    border-radius: 2px;
+  }
+  .footer {
+    display: flex; justify-content: space-between;
+    padding: 6px 30px;
+    font-size: 10px; color: #fff;
+    background: #000;
+    border-top: 1px solid #fff;
+  }
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    height: 480px; font-size: 24px; color: #fff;
+  }
+  .divider { width: 100%; height: 1px; background: #fff; }
+  .meta-line { border-bottom: 1px solid #fff; padding-bottom: 6px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="loading">LOADING TRENDING MOVIES...</div>
+</div>
+<script>
+const TMDB_KEY = 'db243dbce2dc338ceca954f1f6bcb6d1';
+
+async function loadMovies() {
+  try {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/trending/movie/day?api_key=${TMDB_KEY}`
+    );
+    const data = await res.json();
+    const movies = data.results.filter(m => m.title).slice(0, 3);
+    renderMovies(movies);
+  } catch (e) {
+    document.getElementById('app').innerHTML =
+      '<div class="loading">API ERROR — CHECK YOUR TMDB KEY</div>';
+  }
+}
+
+function getStars(rating) {
+  const count = Math.round(rating / 2);
+  return '★'.repeat(count) + '☆'.repeat(5 - count);
+}
+
+function renderMovies(movies) {
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+  });
+
+  let filmHoles = '';
+  for (let i = 0; i < 60; i++) filmHoles += '<div class="film-hole"></div>';
+
+  let movieCards = movies.map((m, i) => {
+    const year = m.release_date ? m.release_date.split('-')[0] : '';
+    const overview = m.overview.length > 120
+      ? m.overview.substring(0, 120) + '...'
+      : m.overview;
+    return `
+      <div class="movie">
+        <div class="rank">#${i + 1}</div>
+        <div class="title">${m.title}</div>
+        <div class="meta meta-line">
+          <span>${year}</span>
+          <span class="stars">${getStars(m.vote_average)}</span>
+          <span>${m.vote_average.toFixed(1)}</span>
+        </div>
+        <div class="overview">${overview}</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('app').innerHTML = `
+    <div class="header">
+      <div>
+        <h1>▶  TRENDING MOVIES</h1>
+        <div class="sub">POWERED BY TMDB · UPDATES EVERY 5 MIN</div>
+      </div>
+      <div class="date">${dateStr}</div>
+    </div>
+    <div class="film-strip">${filmHoles}</div>
+    <div class="movies">${movieCards}</div>
+    <div class="film-strip">${filmHoles}</div>
+    <div class="footer">
+      <span>DATA: THE MOVIE DATABASE (TMDB)</span>
+      <span>▶ TRENDING TODAY · WORLDWIDE</span>
+    </div>
+  `;
+}
+
+loadMovies();
+</script>
+</body>
+</html>
